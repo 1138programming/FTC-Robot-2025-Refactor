@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.arcrobotics.ftclib.controller.PIDFController;
+import com.qualcomm.hardware.kauailabs.NavxMicroNavigationSensor;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -38,6 +39,8 @@ public class Drivebase extends Subsystem{
         rightFront = hardwareMap.get(DcMotorEx.class, rightFrontName);
         leftBack = hardwareMap.get(DcMotorEx.class, leftBackName);
         rightBack = hardwareMap.get(DcMotorEx.class, rightBackName);
+        gyro = hardwareMap.get(NavxMicroNavigationSensor.class, navxSensorName);
+
 
         leftFront.setDirection(DcMotor.Direction.REVERSE);
         rightFront.setDirection(DcMotor.Direction.FORWARD);

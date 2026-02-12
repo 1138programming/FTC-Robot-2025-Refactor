@@ -19,6 +19,7 @@ public class Constants {
         public static final double rotationkI = 0;
         public static final double rotationkD = 0.01;
         public static final double rotationkF = 0;
+        public static final String navxSensorName = "navx";
     }
 
     public static class flywheelConstants{
@@ -37,5 +38,18 @@ public class Constants {
 
     public static class IndexerConstants{
         public static final String indexerServoName = "Indexer";
+    }
+
+    public static class LimelightConstants{
+        public static final String limelightName = "Limelight67";
+        public static final int limelightHzRate = 100;
+        public static final int limelightPipeline = 0;
+        public static final String navxSensorName = "navx";
+    }
+
+    public static class DrivebaseLimelightAlignerConstants{
+        public static final int blueGoalAprilTagID = 20;
+        public static final int redGoalAprilTagID = 24;
+
     }
 }
