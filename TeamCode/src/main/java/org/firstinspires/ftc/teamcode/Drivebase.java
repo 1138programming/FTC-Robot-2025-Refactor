@@ -193,7 +193,7 @@ public class Drivebase extends Subsystem{
         resetRotPIDF();
         double yaw = getYaw();
         double target = degrees + yaw;
-        double error = target+1;
+        double error = target+acceptableAngularError+1;
 
         while (Math.abs(error) >= acceptableAngularError && 180 - Math.abs(error) >= acceptableAngularError) {
             error = target - getYaw();
