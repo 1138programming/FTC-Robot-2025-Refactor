@@ -17,6 +17,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import static org.firstinspires.ftc.teamcode.Constants.DrivebaseConstants.*;
 
+/** Mecanum drivebase with field-relative drive, encoder distance, and gyro-based rotation. */
 public class Drivebase extends Subsystem{
     private DcMotorEx leftFront, leftBack, rightFront, rightBack;
     private IntegratingGyroscope gyro;
@@ -35,6 +36,7 @@ public class Drivebase extends Subsystem{
 
     @Override
     protected void init(){
+        // Motors: left side reversed, right forward; all brake when power 0
         leftFront = hardwareMap.get(DcMotorEx.class, leftFrontName);
         rightFront = hardwareMap.get(DcMotorEx.class, rightFrontName);
         leftBack = hardwareMap.get(DcMotorEx.class, leftBackName);
@@ -61,6 +63,7 @@ public class Drivebase extends Subsystem{
         rotationController = new PIDFController(rotationkP, rotationkI, rotationkD, rotationkF);
     }
 
+    /** Mecanum mix: axial, lateral, yaw; then scale to maxMotorPower if needed. */
     private void getMotorPowers(double axial, double lateral, double yaw, double speed){
         double max;
 
@@ -73,7 +76,7 @@ public class Drivebase extends Subsystem{
         max = Math.max(max, Math.abs(leftBackPower));
         max = Math.max(max, Math.abs(rightBackPower));
 
-        if (max > 1.0) {
+        if (max > maxMotorPower) {
             leftFrontPower  /= max;
             rightFrontPower /= max;
             leftBackPower   /= max;
@@ -81,6 +84,7 @@ public class Drivebase extends Subsystem{
         }
     }
 
+    /** Apply computed powers; reversed inverts all (driver perspective flip). */
     private void setMotorPowers(boolean reversed){
         if (!reversed){
             leftFront.setPower(leftFrontPower);
@@ -95,10 +99,9 @@ public class Drivebase extends Subsystem{
         }
     }
 
+    /** Robot frame: +x = right, +y = forward. reversed flips all powers (e.g. driver facing intake). */
     public void drive(double xVelocity, double yVelocity, double rot, boolean reversed, double speed){
-        double max;
-
-        double axial = -yVelocity;
+        double axial = -yVelocity;  // mecanum convention: forward is negative axial
         double lateral = xVelocity;
         double yaw = rot;
 
@@ -106,12 +109,8 @@ public class Drivebase extends Subsystem{
         setMotorPowers(reversed);
     }
 
+    /** Field-relative: +x = field right, +y = field forward (where forward = heading at last resetFieldRot()). rot is still robot-relative. */
     public void driveFieldRelative(float xVelocity, float yVelocity, float rot, boolean reversed, float speed){
-        float nxVelocity;
-        float nyVelocity;
-
-        VectorF nMatrix = new VectorF(new float[] {xVelocity, yVelocity});
-
         orientation = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES);
         rotMatrix = Orientation.getRotationMatrix(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES,  getAdjustedAngle() - fieldRot, (float) 0, (float) 0);
 
@@ -121,25 +120,29 @@ public class Drivebase extends Subsystem{
         drive(nVector.get(0), nVector.get(1), rot, reversed, speed);
     }
 
+    /** Heading in [0, 360) from gyro (intrinsic ZYX). Used for field-relative; getYaw() is [-180, 180] and used for rotation. */
     public float getAdjustedAngle() {
         orientation = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES);
         if (orientation.firstAngle < 0) {
-            return 180 + (180 + orientation.firstAngle);
+            return 180 + (180 + orientation.firstAngle);  // map (-180, 0) -> (180, 360)
         }
         else {
             return orientation.firstAngle;
         }
     }
 
+    /** Set current heading as field forward. Call at teleop start (or when driver wants forward = current direction). */
     public void resetFieldRot() {
         fieldRot = getAdjustedAngle();
     }
 
-    public double getEncoderDistance(DcMotorEx motor){ //returns how far the motor has moved in inches
+    /** Distance this motor has moved in inches. */
+    public double getEncoderDistance(DcMotorEx motor){
         double currentMotorPos = motor.getCurrentPosition();
         return (currentMotorPos / encoderTicksPerRevolution) * wheelCircumferenceIn;
     }
 
+    /** Zero encoder counts; leave motors in RUN_USING_ENCODER. */
     private void resetMotorEncoders(){
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -152,21 +155,23 @@ public class Drivebase extends Subsystem{
         rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
+    /** Reset drive PIDs (e.g. before new driveDistance). */
     private void resetDrivePIDFs(){
         lPIDF.reset();
         rPIDF.reset();
     }
 
+    /** Blocking: drive straight until both sides reach target distance. Uses left/right front encoders only. */
     public void driveDistance(double inches){
-        resetMotorEncoders(); //reset encoders to make sure there's an accurate reading
+        resetMotorEncoders();
         resetDrivePIDFs();
-        lPIDF.setSetPoint(inches); //set pid targets
+        lPIDF.setSetPoint(inches);
         rPIDF.setSetPoint(inches);
 
         lPIDF.setTolerance(acceptableDriveError);
         rPIDF.setTolerance(acceptableDriveError);
 
-        while(!(lPIDF.atSetPoint() || rPIDF.atSetPoint())){
+        while (!(lPIDF.atSetPoint() || rPIDF.atSetPoint())) {
             double leftOutput = lPIDF.calculate(getEncoderDistance(leftFront));
             double rightOutput = rPIDF.calculate(getEncoderDistance(rightFront));
 
@@ -178,6 +183,7 @@ public class Drivebase extends Subsystem{
 
         resetMotorEncoders();
     }
+    /** Yaw in degrees, typically [-180, 180]. Used for rotation error. */
     private double getYaw(){
         return gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES).firstAngle;
     }
@@ -186,18 +192,21 @@ public class Drivebase extends Subsystem{
         rotationController.reset();
     }
 
+    /** Cap rotation power to maxAngularWheelVelocity. */
     private double clampRotationOutput(double output){
         return Math.max(-maxAngularWheelVelocity, Math.min(maxAngularWheelVelocity, output));
     }
+
+    /** Blocking: rotate by given degrees (relative). Error is wrapped so we take the shortest path (e.g. 2° not 358°). */
     public void rotateDegrees(double degrees){
         resetRotPIDF();
         double yaw = getYaw();
         double target = degrees + yaw;
-        double error = target+acceptableAngularError+1;
+        double error = target + acceptableAngularError + 1;
 
+        // stop when within tolerance, or when only long-way path remains (avoid 358° spin)
         while (Math.abs(error) >= acceptableAngularError && 180 - Math.abs(error) >= acceptableAngularError) {
             error = target - getYaw();
-
             if (error > 180) error -= 360;
             if (error < -180) error += 360;
             double output = rotationController.calculate(0, error);
@@ -227,8 +236,8 @@ public class Drivebase extends Subsystem{
     @Override
     public void update(){
         telemetry.addData("Gyro:",  gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES).firstAngle);
-        telemetry.addData("Distance", getEncoderDistance(leftFront));
-        telemetry.update();
+        telemetry.addData("Distance:", getEncoderDistance(leftFront));
+        telemetry.addData("Ticks:", leftFront.getCurrentPosition());
     }
 
 

@@ -7,9 +7,10 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Subsystem;
 import static org.firstinspires.ftc.teamcode.Constants.IntakeConstants.*;
 
-
+/** Intake motor; power controls speed and direction. */
 public class Intake extends Subsystem{
     private DcMotorEx intakeMotor;
+
     public Intake(HardwareMap hardwareMap, Telemetry telemetry){
         super(hardwareMap, telemetry);
     }
@@ -19,6 +20,7 @@ public class Intake extends Subsystem{
         intakeMotor.setDirection(DcMotor.Direction.FORWARD);
     }
 
+    /** Power -1 to 1. */
     public void setPower(double power){
         intakeMotor.setPower(power);
     }
