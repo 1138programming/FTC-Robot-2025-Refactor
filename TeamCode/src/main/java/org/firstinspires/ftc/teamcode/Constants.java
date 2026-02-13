@@ -65,7 +65,7 @@ public class Constants {
 
     public static class FieldRelativeDriveConstants{
         public static final float speed = 5; //speed multiplier for drivebase
-        public static final double flywheelNormalPower = -0.75;
-        public static final double flywheelExtraPower = -0.785;
+        public static final double flywheelNormalPower = 0.75;
+        public static final double flywheelExtraPower = 0.785;
     }
 }
