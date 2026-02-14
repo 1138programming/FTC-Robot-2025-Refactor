@@ -138,11 +138,11 @@ public class Drivebase extends Subsystem{
         fieldRot = getAdjustedAngle();
     }
 
-    /** Distance this motor has moved in inches. */
+    /** Distance this motor's wheel has traveled in inches. encoderTicksPerRevolution is already ticks per wheel rev. */
     public double getEncoderDistance(DcMotorEx motor){
-        double currentMotorPos = motor.getCurrentPosition();
-        currentMotorPos = (currentMotorPos / encoderTicksPerRevolution) * wheelCircumferenceIn;
-        return currentMotorPos / motorGearRatioDrivebase;
+        double ticks = motor.getCurrentPosition();
+        double wheelRevs = ticks / encoderTicksPerRevolution;
+        return wheelRevs * wheelCircumferenceIn;
     }
 
     /** Zero encoder counts; leave motors in RUN_USING_ENCODER. */
