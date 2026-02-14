@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import static org.firstinspires.ftc.teamcode.Constants.BlueSideAutonConstants.*;
@@ -17,7 +18,9 @@ public class BlueSideAuton extends LinearOpMode {
         drivebase.setDrivePIDFTargets(0);
     }
 
-    public void moveBackToShootPreloadsAndShootPreloads(){
+    public void moveBackAndShootPreloads(){
+        drivebase.resetDrivePIDFs();
+        drivebase.resetMotorEncoders();
         resetPIDTargets();
 
         float oneAndAHalfTiles = fullTileIn + halfTileIn;
@@ -48,7 +51,7 @@ public class BlueSideAuton extends LinearOpMode {
         limelight = new Limelight(hardwareMap, telemetry);
         aligner = new DrivebaseLimelightAligner(hardwareMap, telemetry, drivebase, limelight);
 
-        moveBackToShootPreloadsAndShootPreloads();
+        moveBackAndShootPreloads();
     }
 
 }

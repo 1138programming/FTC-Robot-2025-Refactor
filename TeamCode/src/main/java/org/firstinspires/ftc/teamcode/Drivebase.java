@@ -63,6 +63,10 @@ public class Drivebase extends Subsystem{
         rotationController = new PIDFController(rotationkP, rotationkI, rotationkD, rotationkF);
     }
 
+    public double getMotorPosRaw(DcMotorEx motor){
+        return motor.getCurrentPosition()/1.25;
+    }
+
     /** Mecanum mix: axial, lateral, yaw; then scale to maxMotorPower if needed. */
     private void getMotorPowers(double axial, double lateral, double yaw, double speed){
         double max;
@@ -140,13 +144,13 @@ public class Drivebase extends Subsystem{
 
     /** Distance this motor has moved in inches. */
     public double getEncoderDistance(DcMotorEx motor){
-        double currentMotorPos = motor.getCurrentPosition();
-        currentMotorPos = (currentMotorPos / encoderTicksPerRevolution) * wheelCircumferenceIn;
-        return currentMotorPos / motorGearRatioDrivebase;
+        double currentMotorPos = getMotorPosRaw(motor);
+        currentMotorPos = (currentMotorPos / wheelTicksPerRev) * wheelCircumferenceIn;
+        return currentMotorPos;
     }
 
     /** Zero encoder counts; leave motors in RUN_USING_ENCODER. */
-    private void resetMotorEncoders(){
+    public void resetMotorEncoders(){
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -159,13 +163,13 @@ public class Drivebase extends Subsystem{
     }
 
     /** Reset drive PIDs (e.g. before new driveDistance). */
-    private void resetDrivePIDFs(){
+    public void resetDrivePIDFs(){
         lPIDF.reset();
         rPIDF.reset();
     }
     public void setDrivePIDFTargets(double inches){
-        lPIDF.setSetPoint(inches / 1.5);
-        rPIDF.setSetPoint(inches / 1.5);
+        lPIDF.setSetPoint(inches);
+        rPIDF.setSetPoint(inches);
     }
     public void calculateDrivebasePID(){ //assumes PID targets are set
         if(lPIDF.getSetPoint() == 0.0) return;
@@ -173,13 +177,18 @@ public class Drivebase extends Subsystem{
         lPIDF.setTolerance(acceptableDriveError);
         rPIDF.setTolerance(acceptableDriveError);
 
-        double leftOutput = lPIDF.calculate(getEncoderDistance(leftFront));
-        double rightOutput = rPIDF.calculate(getEncoderDistance(rightFront));
+        double leftOutput = lPIDF.calculate(-getEncoderDistance(leftFront));
+        double rightOutput = rPIDF.calculate(-getEncoderDistance(rightFront));
+        telemetry.addData("leftoutputbeforelimit", leftOutput);
 
-        leftOutput = Math.min(leftOutput, drivePIDMaxOutput);
-        rightOutput = Math.min(rightOutput, drivePIDMaxOutput);
+        if (leftOutput > drivePIDMaxOutput) leftOutput = drivePIDMaxOutput;
+        if (leftOutput < -drivePIDMaxOutput) leftOutput = -drivePIDMaxOutput;
+        if (rightOutput > drivePIDMaxOutput) rightOutput = drivePIDMaxOutput;
+        if(rightOutput < -drivePIDMaxOutput) rightOutput = -drivePIDMaxOutput;
+        telemetry.addData("leftoutputafterlimiting", rightOutput);
 
 
+        telemetry.addData("leftOutput", leftOutput);
         leftFront.setPower(leftOutput);
         leftBack.setPower(leftOutput);
         rightFront.setPower(rightOutput);
@@ -193,6 +202,7 @@ public class Drivebase extends Subsystem{
         resetDrivePIDFs();
         lPIDF.setSetPoint(inches);
         rPIDF.setSetPoint(inches);
+
 
         lPIDF.setTolerance(acceptableDriveError);
         rPIDF.setTolerance(acceptableDriveError);
@@ -263,6 +273,7 @@ public class Drivebase extends Subsystem{
     @Override
     public void updateAuton(){
         telemetry.addData("Distance", getEncoderDistance(leftFront));
+        telemetry.addData("Motor power left", leftFront.getPower());
         telemetry.update();
         calculateDrivebasePID();
     }

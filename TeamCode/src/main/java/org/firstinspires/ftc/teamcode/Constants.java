@@ -11,6 +11,7 @@ public class Constants {
         public static final double motorGearRatioDrivebase = ((1+(46.0/17.0))) * (1+(46.0/11.0));
         public static final double encoderTicksPerRevolution = ((((1.0+(46.0/17.0))) * (1+(46.0/11.0))) * 28.0);
         public static final double wheelCircumferenceIn = 4.09448819; //3.75
+        public static final double wheelTicksPerRev = encoderTicksPerRevolution;
         public static final double maxMotorPower = 1.0;
         public static final double acceptableDriveError = 0.1;
         public static final double maxAngularWheelVelocity = 0.5;
