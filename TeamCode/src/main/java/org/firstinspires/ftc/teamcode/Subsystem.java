@@ -20,4 +20,6 @@ public abstract class Subsystem {
     public void update(){}
     /** Call when stopping or switching mode; stop motors and reset state. */
     public void stop(){}
+
+    public void updateAuton(){}
 }

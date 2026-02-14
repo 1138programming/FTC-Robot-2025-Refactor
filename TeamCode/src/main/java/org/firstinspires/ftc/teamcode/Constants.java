@@ -8,21 +8,23 @@ public class Constants {
         public static final String rightFrontName = "RightFront";
         public static final String leftBackName = "LeftBack";
         public static final String rightBackName = "RightBack";
-        public static final double encoderTicksPerRevolution = 537.7;
-        public static final double wheelCircumferenceIn = 3.75;
+        public static final double motorGearRatioDrivebase = ((1+(46.0/17.0))) * (1+(46.0/11.0));
+        public static final double encoderTicksPerRevolution = ((((1.0+(46.0/17.0))) * (1+(46.0/11.0))) * 28.0);
+        public static final double wheelCircumferenceIn = 4.09448819; //3.75
         public static final double maxMotorPower = 1.0;
         public static final double acceptableDriveError = 0.1;
         public static final double maxAngularWheelVelocity = 0.5;
         public static final double acceptableAngularError = 2;
-        public static final double drivekP = 0.4;
-        public static final double drivekI = 0.000001;
-        public static final double drivekD = 0.002;
+        public static final double drivekP = 0.2;
+        public static final double drivekI = 0.000000;
+        public static final double drivekD = 0.000;
         public static final double drivekF = 0;
         public static final double rotationkP = 0.02;
         public static final double rotationkI = 0;
         public static final double rotationkD = 0.01;
         public static final double rotationkF = 0;
         public static final String navxSensorName = "navx";
+        public static final double drivePIDMaxOutput = 0.6;
     }
 
     /** Flywheel: PID and encoder for velocity control. */
@@ -67,5 +69,11 @@ public class Constants {
         public static final float speed = 5; //speed multiplier for drivebase
         public static final double flywheelNormalPower = 0.75;
         public static final double flywheelExtraPower = 0.785;
+    }
+
+    public static class BlueSideAutonConstants{
+        public static final float halfTileIn = 12;
+        public static final float fullTileIn = 24;
+        public static final float quarterTileIn = 6;
     }
 }

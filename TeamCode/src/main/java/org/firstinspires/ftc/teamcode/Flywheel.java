@@ -72,6 +72,11 @@ public class Flywheel extends Subsystem{
         flywheelPIDController.reset();
     }
 
+    @Override
+    public void updateAuton(){
+        calculateFlywheelPID();
+    }
+
 
 
 }

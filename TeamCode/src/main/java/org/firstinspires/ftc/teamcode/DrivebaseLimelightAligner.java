@@ -13,13 +13,14 @@ public class DrivebaseLimelightAligner extends Subsystem{
     private Drivebase drivebase;
     private Limelight limelight;
 
-    public DrivebaseLimelightAligner(HardwareMap hardwareMap, Telemetry telemetry){
+    public DrivebaseLimelightAligner(HardwareMap hardwareMap, Telemetry telemetry, Drivebase drivebase, Limelight limelight){
         super(hardwareMap, telemetry);
+        this.drivebase = drivebase;
+        this.limelight = limelight;
     }
     @Override
     protected void init(){
-        drivebase = new Drivebase(hardwareMap, telemetry);
-        limelight = new Limelight(hardwareMap, telemetry);
+
     }
 
     /** If targetID is red/blue goal tag and it's visible, rotates to center it (blocking). Ignores other tags. */

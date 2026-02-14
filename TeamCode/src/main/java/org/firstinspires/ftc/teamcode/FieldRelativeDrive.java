@@ -78,9 +78,11 @@ public class FieldRelativeDrive extends LinearOpMode {
 
         drivebase.resetFieldRot();
         while (opModeIsActive()){
+
             baseDrivingInput();
             armsDrivingInput();
             telemetry.update();
+
         }
     }
 }

@@ -112,7 +112,9 @@ public class Drivebase extends Subsystem{
     /** Field-relative: +x = field right, +y = field forward (where forward = heading at last resetFieldRot()). rot is still robot-relative. */
     public void driveFieldRelative(float xVelocity, float yVelocity, float rot, boolean reversed, float speed){
         orientation = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES);
-        rotMatrix = Orientation.getRotationMatrix(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES,  getAdjustedAngle() - fieldRot, (float) 0, (float) 0);
+        rotMatrix = Orientation.getRotationMatrix(
+                AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES,  getAdjustedAngle() - fieldRot, (float) 0, (float) 0
+        );
 
         VectorF SVector = new VectorF(new float[] {xVelocity, yVelocity, 0, 1});
         VectorF nVector =  rotMatrix.multiplied(SVector);
@@ -139,7 +141,8 @@ public class Drivebase extends Subsystem{
     /** Distance this motor has moved in inches. */
     public double getEncoderDistance(DcMotorEx motor){
         double currentMotorPos = motor.getCurrentPosition();
-        return (currentMotorPos / encoderTicksPerRevolution) * wheelCircumferenceIn;
+        currentMotorPos = (currentMotorPos / encoderTicksPerRevolution) * wheelCircumferenceIn;
+        return currentMotorPos / motorGearRatioDrivebase;
     }
 
     /** Zero encoder counts; leave motors in RUN_USING_ENCODER. */
@@ -160,6 +163,29 @@ public class Drivebase extends Subsystem{
         lPIDF.reset();
         rPIDF.reset();
     }
+    public void setDrivePIDFTargets(double inches){
+        lPIDF.setSetPoint(inches / 1.5);
+        rPIDF.setSetPoint(inches / 1.5);
+    }
+    public void calculateDrivebasePID(){ //assumes PID targets are set
+        if(lPIDF.getSetPoint() == 0.0) return;
+
+        lPIDF.setTolerance(acceptableDriveError);
+        rPIDF.setTolerance(acceptableDriveError);
+
+        double leftOutput = lPIDF.calculate(getEncoderDistance(leftFront));
+        double rightOutput = rPIDF.calculate(getEncoderDistance(rightFront));
+
+        leftOutput = Math.min(leftOutput, drivePIDMaxOutput);
+        rightOutput = Math.min(rightOutput, drivePIDMaxOutput);
+
+
+        leftFront.setPower(leftOutput);
+        leftBack.setPower(leftOutput);
+        rightFront.setPower(rightOutput);
+        rightBack.setPower(rightOutput);
+    }
+
 
     /** Blocking: drive straight until both sides reach target distance. Uses left/right front encoders only. */
     public void driveDistance(double inches){
@@ -172,13 +198,7 @@ public class Drivebase extends Subsystem{
         rPIDF.setTolerance(acceptableDriveError);
 
         while (!(lPIDF.atSetPoint() || rPIDF.atSetPoint())) {
-            double leftOutput = lPIDF.calculate(getEncoderDistance(leftFront));
-            double rightOutput = rPIDF.calculate(getEncoderDistance(rightFront));
-
-            leftFront.setPower(leftOutput);
-            leftBack.setPower(leftOutput);
-            rightFront.setPower(rightOutput);
-            rightBack.setPower(rightOutput);
+            calculateDrivebasePID();
         }
 
         resetMotorEncoders();
@@ -238,6 +258,13 @@ public class Drivebase extends Subsystem{
         telemetry.addData("Gyro:",  gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES).firstAngle);
         telemetry.addData("Distance:", getEncoderDistance(leftFront));
         telemetry.addData("Ticks:", leftFront.getCurrentPosition());
+    }
+
+    @Override
+    public void updateAuton(){
+        telemetry.addData("Distance", getEncoderDistance(leftFront));
+        telemetry.update();
+        calculateDrivebasePID();
     }
 
 
