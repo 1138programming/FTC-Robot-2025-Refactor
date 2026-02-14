@@ -138,15 +138,15 @@ public class Drivebase extends Subsystem{
         fieldRot = getAdjustedAngle();
     }
 
-    /** Distance this motor has moved in inches. */
+    /** Distance this motor's wheel has traveled in inches. Uses GoBilda 5203 ticks per wheel rev; motors must be RUN_USING_ENCODER. */
     public double getEncoderDistance(DcMotorEx motor){
         double ticks = motor.getCurrentPosition();
-        double wheelRevs = ticks / encoderTicksPerRevolution;
+        double wheelRevs = ticks / encoderTicksPerWheelRev;
         return wheelRevs * wheelCircumferenceIn;
     }
 
     /** Zero encoder counts; leave motors in RUN_USING_ENCODER. */
-    public void resetMotorEncoders(){
+    private void resetMotorEncoders(){
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -159,7 +159,7 @@ public class Drivebase extends Subsystem{
     }
 
     /** Reset drive PIDs (e.g. before new driveDistance). */
-    public void resetDrivePIDFs(){
+    private void resetDrivePIDFs(){
         lPIDF.reset();
         rPIDF.reset();
     }
