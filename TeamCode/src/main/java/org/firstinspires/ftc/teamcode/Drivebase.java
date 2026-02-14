@@ -63,10 +63,6 @@ public class Drivebase extends Subsystem{
         rotationController = new PIDFController(rotationkP, rotationkI, rotationkD, rotationkF);
     }
 
-    public double getMotorPosRaw(DcMotorEx motor){
-        return motor.getCurrentPosition()/1.25;
-    }
-
     /** Mecanum mix: axial, lateral, yaw; then scale to maxMotorPower if needed. */
     private void getMotorPowers(double axial, double lateral, double yaw, double speed){
         double max;
@@ -144,9 +140,9 @@ public class Drivebase extends Subsystem{
 
     /** Distance this motor has moved in inches. */
     public double getEncoderDistance(DcMotorEx motor){
-        double currentMotorPos = getMotorPosRaw(motor);
-        currentMotorPos = (currentMotorPos / wheelTicksPerRev) * wheelCircumferenceIn;
-        return currentMotorPos;
+        double ticks = motor.getCurrentPosition();
+        double wheelRevs = ticks / encoderTicksPerRevolution;
+        return wheelRevs * wheelCircumferenceIn;
     }
 
     /** Zero encoder counts; leave motors in RUN_USING_ENCODER. */
@@ -168,8 +164,8 @@ public class Drivebase extends Subsystem{
         rPIDF.reset();
     }
     public void setDrivePIDFTargets(double inches){
-        lPIDF.setSetPoint(inches);
-        rPIDF.setSetPoint(inches);
+        lPIDF.setSetPoint(inches / 1.5);
+        rPIDF.setSetPoint(inches / 1.5);
     }
     public void calculateDrivebasePID(){ //assumes PID targets are set
         if(lPIDF.getSetPoint() == 0.0) return;
@@ -177,18 +173,13 @@ public class Drivebase extends Subsystem{
         lPIDF.setTolerance(acceptableDriveError);
         rPIDF.setTolerance(acceptableDriveError);
 
-        double leftOutput = lPIDF.calculate(-getEncoderDistance(leftFront));
-        double rightOutput = rPIDF.calculate(-getEncoderDistance(rightFront));
-        telemetry.addData("leftoutputbeforelimit", leftOutput);
+        double leftOutput = lPIDF.calculate(getEncoderDistance(leftFront));
+        double rightOutput = rPIDF.calculate(getEncoderDistance(rightFront));
 
-        if (leftOutput > drivePIDMaxOutput) leftOutput = drivePIDMaxOutput;
-        if (leftOutput < -drivePIDMaxOutput) leftOutput = -drivePIDMaxOutput;
-        if (rightOutput > drivePIDMaxOutput) rightOutput = drivePIDMaxOutput;
-        if(rightOutput < -drivePIDMaxOutput) rightOutput = -drivePIDMaxOutput;
-        telemetry.addData("leftoutputafterlimiting", rightOutput);
+        leftOutput = Math.min(leftOutput, drivePIDMaxOutput);
+        rightOutput = Math.min(rightOutput, drivePIDMaxOutput);
 
 
-        telemetry.addData("leftOutput", leftOutput);
         leftFront.setPower(leftOutput);
         leftBack.setPower(leftOutput);
         rightFront.setPower(rightOutput);
@@ -202,7 +193,6 @@ public class Drivebase extends Subsystem{
         resetDrivePIDFs();
         lPIDF.setSetPoint(inches);
         rPIDF.setSetPoint(inches);
-
 
         lPIDF.setTolerance(acceptableDriveError);
         rPIDF.setTolerance(acceptableDriveError);
@@ -273,7 +263,6 @@ public class Drivebase extends Subsystem{
     @Override
     public void updateAuton(){
         telemetry.addData("Distance", getEncoderDistance(leftFront));
-        telemetry.addData("Motor power left", leftFront.getPower());
         telemetry.update();
         calculateDrivebasePID();
     }
