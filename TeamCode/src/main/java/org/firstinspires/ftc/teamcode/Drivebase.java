@@ -138,10 +138,10 @@ public class Drivebase extends Subsystem{
         fieldRot = getAdjustedAngle();
     }
 
-    /** Distance this motor's wheel has traveled in inches. encoderTicksPerRevolution is already ticks per wheel rev. */
+    /** Distance this motor's wheel has traveled in inches. Uses GoBilda 5203 ticks per wheel rev; motors must be RUN_USING_ENCODER. */
     public double getEncoderDistance(DcMotorEx motor){
         double ticks = motor.getCurrentPosition();
-        double wheelRevs = ticks / encoderTicksPerRevolution;
+        double wheelRevs = ticks / encoderTicksPerWheelRev;
         return wheelRevs * wheelCircumferenceIn;
     }
 

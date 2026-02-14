@@ -2,15 +2,17 @@ package org.firstinspires.ftc.teamcode;
 
 /** Central place for hardware names and tunable constants. */
 public class Constants {
-    /** Drivebase: motor names, odometry, PID, rotation. */
+    /** Drivebase: motor names, odometry, PID, rotation. Motors: GoBilda 5203 Yellow Jacket. */
     public static class DrivebaseConstants{
         public static final String leftFrontName = "LeftFront";
         public static final String rightFrontName = "RightFront";
         public static final String leftBackName = "LeftBack";
         public static final String rightBackName = "RightBack";
-        public static final double motorGearRatioDrivebase = ((1+(46.0/17.0))) * (1+(46.0/11.0));
-        public static final double encoderTicksPerRevolution = ((((1.0+(46.0/17.0))) * (1+(46.0/11.0))) * 28.0);
-        public static final double wheelCircumferenceIn = 4.09448819; //3.75
+        /** GoBilda 5203: encoder is 28 cpr at motor; at output = gearRatio * 28. 19.2:1 → 537.7, 13.7:1 → 384.5. */
+        public static final double encoderTicksPerWheelRev = 537.7;  // 19.2:1 = (1+46/17)*(1+46/11); use 384.5 for 13.7:1
+        public static final double motorGearRatioDrivebase = (1 + (46.0 / 17.0)) * (1 + (46.0 / 11.0));
+        /** Wheel circumference in inches (measure: π × diameter, or roll-out). */
+        public static final double wheelCircumferenceIn = 4.09448819;
         public static final double maxMotorPower = 1.0;
         public static final double acceptableDriveError = 0.1;
         public static final double maxAngularWheelVelocity = 0.5;
