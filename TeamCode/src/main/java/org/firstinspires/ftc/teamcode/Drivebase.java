@@ -237,7 +237,7 @@ public class Drivebase extends Subsystem{
 
     public double calculateRotPID(double target){
         double yaw = getYaw();
-        double error = target - yaw;
+        double error = target + yaw;
 
         if(error > 180) error -= 360;
         if(error < -180) error += 360;

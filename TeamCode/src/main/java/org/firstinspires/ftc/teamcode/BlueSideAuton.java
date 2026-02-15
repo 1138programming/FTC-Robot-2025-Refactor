@@ -59,10 +59,13 @@ public class BlueSideAuton extends LinearOpMode {
                 drivebase.getYaw() - 90
         );
 
-        while (drivebase.rotReachedTarget(rotError)){
+        while (!drivebase.rotReachedTarget(rotError)){
             rotError = drivebase.calculateRotPID(
                     drivebase.getYaw() - 90
             );
+            telemetry.addData("rotError", rotError);
+            telemetry.addData("Yaw", drivebase.getYaw());
+            telemetry.update();
         }
     }
 
