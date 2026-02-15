@@ -23,10 +23,18 @@ public class Flywheel extends Subsystem{
         flywheelMotor.setDirection(DcMotorSimple.Direction.FORWARD);
         flywheelPIDController = new PIDFController(flykP, flykI, flykD, flykF);
     }
+    public void resetEncoder(){
+        flywheelMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        flywheelMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+    }
 
+    public void resetPID(){
+        flywheelPIDController.reset();
+    }
     /** Current speed from encoder velocity; units match setPoint (RPM if you set RPM). */
     private int getFlywheelRPM(){
         double flywheelVelocity = flywheelMotor.getVelocity();
+
         return (int) (flywheelVelocity / encoderTicksPerRotation) * 60;
     }
 
@@ -74,6 +82,9 @@ public class Flywheel extends Subsystem{
 
     @Override
     public void updateAuton(){
+        telemetry.addData("Flywheel RPM", getFlywheelRPM());
+        telemetry.addData("Flywheel power", flywheelMotor.getPower());
+        telemetry.update();
         calculateFlywheelPID();
     }
 

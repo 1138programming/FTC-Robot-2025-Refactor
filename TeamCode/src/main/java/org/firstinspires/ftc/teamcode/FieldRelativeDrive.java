@@ -15,14 +15,22 @@ public class FieldRelativeDrive extends LinearOpMode {
     Intake intake;
     boolean lastPress = false;
 
+    boolean flywheelTurboLastPress = false;
+
     public void baseDrivingInput(){
         Gamepad baseDriver = gamepad1;
         float leftStickX = baseDriver.left_stick_x;
         float leftStickY = baseDriver.left_stick_y;
         float rightStickX = baseDriver.right_stick_x;
 
+        if (baseDriver.left_bumper) {
+            drivebase.driveFieldRelative(
+                    leftStickX, leftStickY, rightStickX, false, boostSpeed
+            );
+            return;
+        }
         drivebase.driveFieldRelative(
-           leftStickX, leftStickY, rightStickX, false, speed
+                leftStickX, leftStickY, rightStickX, false, normalSpeed
         );
     }
 
@@ -47,13 +55,30 @@ public class FieldRelativeDrive extends LinearOpMode {
         }
 
         //Flywheel input handling
-        if (baseDriver.right_bumper){
-            flywheel.setPower(flywheelNormalPower); //normal mode power
-        } else if (baseDriver.right_trigger > 0){
-            flywheel.setPower(flywheelExtraPower);
-        } else {
+        if (baseDriver.right_bumper) {  // TURBO MODE (4000 RPM)
+
+            if (!flywheelTurboLastPress) {      // Just switched to turbo
+                flywheel.resetPID();
+                flywheelTurboLastPress = true;
+            }
+
+            flywheel.assignPIDTarget(4000);
+            flywheel.updateAuton();
+
+        } else if (baseDriver.right_trigger > 0) {  // NORMAL MODE (3700 RPM)
+
+            if (flywheelTurboLastPress) {       // Just switched from turbo
+                flywheel.resetPID();
+                flywheelTurboLastPress = false;
+            }
+
+            flywheel.assignPIDTarget(3700);
+            flywheel.updateAuton();
+
+        } else {  // OFF
             flywheel.setPower(0);
         }
+
 
 
         if (gamepad1.dpad_up && !lastPress){

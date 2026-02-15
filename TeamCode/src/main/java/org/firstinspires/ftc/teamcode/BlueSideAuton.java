@@ -23,21 +23,47 @@ public class BlueSideAuton extends LinearOpMode {
         drivebase.resetMotorEncoders();
         resetPIDTargets();
 
-        float oneAndAHalfTiles = fullTileIn + halfTileIn;
         int timeDrivingBack = 3000;
         long startTime = System.currentTimeMillis();
 
-        drivebase.setDrivePIDFTargets(-oneAndAHalfTiles);
-        flywheel.assignPIDTarget(4000);
+        drivebase.setDrivePIDFTargets(-7);
+        flywheel.assignPIDTarget(3500);
 
-        while(System.currentTimeMillis() - startTime < timeDrivingBack){
+        while(!drivebase.pidsAtTargets()){ //move back and rev flywheel
             drivebase.updateAuton();
             flywheel.updateAuton();
         }
+        drivebase.stop();
 
         resetPIDTargets();
+        flywheel.assignPIDTarget(3500);
 
+        TimeHandler firstTimeHandler = new TimeHandler(9000);
 
+        while (!firstTimeHandler.isTimeExpired()){
+            flywheel.updateAuton();
+            if (firstTimeHandler.timeInRange(2500, 4000)){
+                indexer.setPower(1);
+                intake.setPower(-1);
+                continue;
+            }
+
+            if (firstTimeHandler.timeInRange(6000, 8000)){
+                indexer.setPower(1);
+            }
+        }
+    }
+
+    public void intakeBalls(){
+        double rotError = drivebase.calculateRotPID(
+                drivebase.getYaw() - 90
+        );
+
+        while (drivebase.rotReachedTarget(rotError)){
+            rotError = drivebase.calculateRotPID(
+                    drivebase.getYaw() - 90
+            );
+        }
     }
 
     @Override
@@ -52,6 +78,7 @@ public class BlueSideAuton extends LinearOpMode {
         aligner = new DrivebaseLimelightAligner(hardwareMap, telemetry, drivebase, limelight);
 
         moveBackAndShootPreloads();
+        intakeBalls();
     }
 
 }

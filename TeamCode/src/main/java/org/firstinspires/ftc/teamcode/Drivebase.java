@@ -36,7 +36,7 @@ public class Drivebase extends Subsystem{
 
     @Override
     protected void init(){
-        // Motors: left side reversed, right forward; all brake when power 0
+        // Motors: left side reversed, right forward; all FLOAT when power 0
         leftFront = hardwareMap.get(DcMotorEx.class, leftFrontName);
         rightFront = hardwareMap.get(DcMotorEx.class, rightFrontName);
         leftBack = hardwareMap.get(DcMotorEx.class, leftBackName);
@@ -49,10 +49,10 @@ public class Drivebase extends Subsystem{
         leftBack.setDirection(DcMotor.Direction.REVERSE);
         rightBack.setDirection(DcMotor.Direction.FORWARD);
 
-        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
         orientation = gyro.getAngularOrientation(AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES);
         rotMatrix =  orientation.getRotationMatrix();
@@ -122,6 +122,15 @@ public class Drivebase extends Subsystem{
         drive(nVector.get(0), nVector.get(1), rot, reversed, speed);
     }
 
+    public void setMotorsToUseEncoders(){
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+
+    }
+
     /** Heading in [0, 360) from gyro (intrinsic ZYX). Used for field-relative; getYaw() is [-180, 180] and used for rotation. */
     public float getAdjustedAngle() {
         orientation = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES);
@@ -140,13 +149,14 @@ public class Drivebase extends Subsystem{
 
     /** Distance this motor's wheel has traveled in inches. Uses GoBilda 5203 ticks per wheel rev; motors must be RUN_USING_ENCODER. */
     public double getEncoderDistance(DcMotorEx motor){
+
         double ticks = motor.getCurrentPosition();
         double wheelRevs = ticks / encoderTicksPerWheelRev;
-        return wheelRevs * wheelCircumferenceIn;
+        return wheelRevs * wheelCircumferenceIn * 3;
     }
 
     /** Zero encoder counts; leave motors in RUN_USING_ENCODER. */
-    private void resetMotorEncoders(){
+    public void resetMotorEncoders(){
         leftFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         leftBack.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         rightFront.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -156,16 +166,21 @@ public class Drivebase extends Subsystem{
         leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
     }
 
     /** Reset drive PIDs (e.g. before new driveDistance). */
-    private void resetDrivePIDFs(){
+    public void resetDrivePIDFs(){
         lPIDF.reset();
         rPIDF.reset();
     }
     public void setDrivePIDFTargets(double inches){
-        lPIDF.setSetPoint(inches / 1.5);
-        rPIDF.setSetPoint(inches / 1.5);
+        lPIDF.setSetPoint(inches);
+        rPIDF.setSetPoint(inches);
     }
     public void calculateDrivebasePID(){ //assumes PID targets are set
         if(lPIDF.getSetPoint() == 0.0) return;
@@ -176,9 +191,12 @@ public class Drivebase extends Subsystem{
         double leftOutput = lPIDF.calculate(getEncoderDistance(leftFront));
         double rightOutput = rPIDF.calculate(getEncoderDistance(rightFront));
 
-        leftOutput = Math.min(leftOutput, drivePIDMaxOutput);
-        rightOutput = Math.min(rightOutput, drivePIDMaxOutput);
-
+        if (leftOutput > drivePIDMaxOutput) leftOutput = drivePIDMaxOutput;
+        if (leftOutput < -drivePIDMaxOutput) leftOutput = -drivePIDMaxOutput;
+        if (rightOutput > drivePIDMaxOutput) rightOutput = drivePIDMaxOutput;
+        if (rightOutput < -drivePIDMaxOutput) rightOutput = -drivePIDMaxOutput;
+        telemetry.addData("left Output", leftOutput);
+        telemetry.addData("Right output", rightOutput);
 
         leftFront.setPower(leftOutput);
         leftBack.setPower(leftOutput);
@@ -204,17 +222,38 @@ public class Drivebase extends Subsystem{
         resetMotorEncoders();
     }
     /** Yaw in degrees, typically [-180, 180]. Used for rotation error. */
-    private double getYaw(){
+    public double getYaw(){
         return gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.ZYX,AngleUnit.DEGREES).firstAngle;
     }
 
-    private void resetRotPIDF(){
+    public void resetRotPIDF(){
         rotationController.reset();
     }
 
     /** Cap rotation power to maxAngularWheelVelocity. */
     private double clampRotationOutput(double output){
         return Math.max(-maxAngularWheelVelocity, Math.min(maxAngularWheelVelocity, output));
+    }
+
+    public double calculateRotPID(double target){
+        double yaw = getYaw();
+        double error = target - yaw;
+
+        if(error > 180) error -= 360;
+        if(error < -180) error += 360;
+
+        double output = rotationController.calculate(0, error);
+
+        leftFront.setPower(clampRotationOutput(output));
+        leftBack.setPower(clampRotationOutput(output));
+        rightFront.setPower(clampRotationOutput(-output));
+        rightBack.setPower(clampRotationOutput(-output));
+
+        return error;
+    }
+
+    public boolean rotReachedTarget(double error){
+        return Math.abs(error) <= acceptableAngularError && 180 - Math.abs(error) <= acceptableAngularError;
     }
 
     /** Blocking: rotate by given degrees (relative). Error is wrapped so we take the shortest path (e.g. 2° not 358°). */
@@ -226,21 +265,17 @@ public class Drivebase extends Subsystem{
 
         // stop when within tolerance, or when only long-way path remains (avoid 358° spin)
         while (Math.abs(error) >= acceptableAngularError && 180 - Math.abs(error) >= acceptableAngularError) {
-            error = target - getYaw();
-            if (error > 180) error -= 360;
-            if (error < -180) error += 360;
-            double output = rotationController.calculate(0, error);
-
-            leftFront.setPower(clampRotationOutput(output));
-            leftBack.setPower(clampRotationOutput(output));
-            rightFront.setPower(-output);
-            rightBack.setPower(-output);
+            error = calculateRotPID(target);
         }
 
         leftFront.setPower(0);
         leftBack.setPower(0);
         rightFront.setPower(0);
         rightBack.setPower(0);
+    }
+
+    public boolean pidsAtTargets(){
+        return lPIDF.atSetPoint() && rPIDF.atSetPoint();
     }
     @Override
     public void stop(){
