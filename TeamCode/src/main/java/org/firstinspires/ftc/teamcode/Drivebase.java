@@ -237,13 +237,15 @@ public class Drivebase extends Subsystem{
 
     public double calculateRotPID(double target){
         double yaw = getYaw();
-        double error = target + yaw;
+        double error = target - yaw;
 
         if(error > 180) error -= 360;
         if(error < -180) error += 360;
 
-        double output = rotationController.calculate(0, error);
+        double output = rotationController.calculate(error, 0);
 
+        telemetry.addData("180 - Math.abs(error)", 180 - Math.abs(error));
+        telemetry.addData("Math.abs(error)", Math.abs(error));
         leftFront.setPower(clampRotationOutput(output));
         leftBack.setPower(clampRotationOutput(output));
         rightFront.setPower(clampRotationOutput(-output));
@@ -253,11 +255,13 @@ public class Drivebase extends Subsystem{
     }
 
     public boolean rotReachedTarget(double error){
+        telemetry.addData("error", Math.abs(error));
+
         return Math.abs(error) <= acceptableAngularError && 180 - Math.abs(error) <= acceptableAngularError;
     }
 
     /** Blocking: rotate by given degrees (relative). Error is wrapped so we take the shortest path (e.g. 2° not 358°). */
-    public void rotateDegrees(double degrees){
+    /*public void rotateDegrees(double degrees){
         resetRotPIDF();
         double yaw = getYaw();
         double target = degrees + yaw;
@@ -265,6 +269,7 @@ public class Drivebase extends Subsystem{
 
         // stop when within tolerance, or when only long-way path remains (avoid 358° spin)
         while (Math.abs(error) >= acceptableAngularError && 180 - Math.abs(error) >= acceptableAngularError) {
+            telemetry.addData("180 - Math.abs(error)", 180 - Math.abs(error));
             error = calculateRotPID(target);
         }
 
@@ -272,7 +277,93 @@ public class Drivebase extends Subsystem{
         leftBack.setPower(0);
         rightFront.setPower(0);
         rightBack.setPower(0);
+    }*/
+
+    public double angleWrap(double angle) {
+        while (angle > 180) angle -= 360;
+        while (angle < -180) angle += 360;
+        return angle;
     }
+
+
+    public void rotateDegrees(double degrees){
+        resetRotPIDF();
+
+        double target = getYaw() +  degrees;
+        target %= 360;
+        if (target < -180) target += 360;
+        if (target > 180) target -= 360;
+
+        rotationController.setTolerance(acceptableAngularError);
+
+        double error = target;
+
+
+        while (Math.abs(error) > acceptableAngularError){
+            error = target - getYaw();
+
+            error %= 360;
+            if (error < -180) error += 360;
+            if (error > 180) error -= 360;
+
+            double output = rotationController.calculate(error, 0);
+
+
+            leftFront.setPower(clampRotationOutput(output));
+            leftBack.setPower(clampRotationOutput(output));
+            rightFront.setPower(clampRotationOutput(-output));
+            rightBack.setPower(clampRotationOutput(-output));
+
+            telemetry.addData("position error", rotationController.getPositionError());
+            telemetry.update();
+        }
+
+        leftFront.setPower(0);
+        leftBack.setPower(0);
+        rightFront.setPower(0);
+        rightBack.setPower(0);
+
+    }
+
+//    public void rotateDegrees(double degrees){
+//        resetRotPIDF();
+//
+//        double target = getYaw() + degrees;
+//
+//        // wrap target
+//        if (target > 180) target -= 360;
+//        if (target < -180) target += 360;
+//
+//        rotationController.setSetPoint(target);
+//        rotationController.setTolerance(acceptableAngularError);
+//
+//
+//        double error = target - getYaw();
+//
+//        while (Math.abs(error) > acceptableAngularError) {
+//
+//            double currentYaw = getYaw();
+//
+//            // wrap shortest path
+//            error = target - currentYaw;
+//            if (error > 180) error -= 360;
+//            if (error < -180) error += 360;
+//
+//            double output = rotationController.calculate(currentYaw);
+//            output = clampRotationOutput(output);
+//
+//            leftFront.setPower(output);
+//            leftBack.setPower(output);
+//            rightFront.setPower(-output);
+//            rightBack.setPower(-output);
+//
+//            telemetry.addData("Error", error);
+//            telemetry.update();
+//        }
+//
+//        stop();
+//    }
+
 
     public boolean pidsAtTargets(){
         return lPIDF.atSetPoint() && rPIDF.atSetPoint();

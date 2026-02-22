@@ -4,8 +4,8 @@ import com.arcrobotics.ftclib.controller.PIDFController;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import static org.firstinspires.ftc.teamcode.Constants.BlueSideAutonConstants.*;
-@Autonomous(name="BlueSideAutonKatieIan4167WooHoo", group="Linear OpMode")
-public class BlueSideAuton extends LinearOpMode {
+@Autonomous(name="RedSideAutonKatieIan4167WooHoo", group="Linear OpMode")
+public class RedSideAuton extends LinearOpMode {
     Drivebase drivebase;
     DrivebaseLimelightAligner aligner;
     Flywheel flywheel;
@@ -63,8 +63,8 @@ public class BlueSideAuton extends LinearOpMode {
             intake.setPower(0);
         }
 
-        drivebase.rotateDegrees(90);
-        drivebase.driveDistance(18);
+        drivebase.rotateDegrees(-90);
+        drivebase.driveDistance(-18);
 
 //        drivebase.resetDrivePIDFs();
 //        drivebase.setDrivePIDFTargets(-28);

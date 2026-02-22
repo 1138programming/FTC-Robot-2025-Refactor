@@ -48,4 +48,18 @@ public class DrivebaseLimelightAligner extends Subsystem{
         drivebase.rotateDegrees(-tx);
     }
 
+    public boolean targetIDDetected(int tID){
+        List<LLResultTypes.FiducialResult> fiducialResults = limelight.getFiducialResults(limelight.getResult());
+        LLResultTypes.FiducialResult targetFiducial = null;
+
+        for (LLResultTypes.FiducialResult fr : fiducialResults) {
+            if (fr.getFiducialId() == tID) {
+                targetFiducial = fr;
+                break;
+            }
+        }
+
+        return targetFiducial != null;
+    }
+
 }

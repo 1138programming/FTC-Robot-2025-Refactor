@@ -55,14 +55,14 @@ public class FieldRelativeDrive extends LinearOpMode {
         }
 
         //Flywheel input handling
-        if (baseDriver.right_bumper) {  // TURBO MODE (4000 RPM)
+        if (baseDriver.right_bumper) {  // TURBO MODE (4500 RPM)
 
             if (!flywheelTurboLastPress) {      // Just switched to turbo
                 flywheel.resetPID();
                 flywheelTurboLastPress = true;
             }
 
-            flywheel.assignPIDTarget(4000);
+            flywheel.assignPIDTarget(4500);
             flywheel.updateAuton();
 
         } else if (baseDriver.right_trigger > 0) {  // NORMAL MODE (3700 RPM)

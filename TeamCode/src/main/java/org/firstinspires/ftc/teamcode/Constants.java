@@ -16,14 +16,14 @@ public class Constants {
         public static final double maxMotorPower = 1.0;
         public static final double acceptableDriveError = 0.1;
         public static final double maxAngularWheelVelocity = 0.5;
-        public static final double acceptableAngularError = 2;
+        public static final double acceptableAngularError = 5;
         public static final double drivekP = 0.2;
         public static final double drivekI = 0.000000;
         public static final double drivekD = 0.000;
         public static final double drivekF = 0;
-        public static final double rotationkP = 0.02;
+        public static final double rotationkP = 0.2;
         public static final double rotationkI = 0;
-        public static final double rotationkD = 0.01;
+        public static final double rotationkD = 0.00;
         public static final double rotationkF = 0;
         public static final String navxSensorName = "navx";
         public static final double drivePIDMaxOutput = 0.6;
